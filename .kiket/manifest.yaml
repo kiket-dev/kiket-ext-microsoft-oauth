@@ -1,0 +1,154 @@
+model_version: "1.0"
+extension:
+  id: dev.kiket.ext.microsoft-oauth
+  name: Microsoft OAuth
+  version: 1.0.0
+  description: Shared OAuth 2.0 provider for Microsoft services. Enables single sign-on for Outlook Calendar, Microsoft Teams, OneDrive, and other Microsoft 365 integrations.
+  author: Kiket Team
+  homepage: https://github.com/kiket-dev/kiket-ext-microsoft-oauth
+  delivery: http
+  callback:
+    url: ${EXTENSION_BASE_URL}
+    secret: env.KIKET_WEBHOOK_SECRET
+    timeout: 30000
+    required: true
+  activationEvents:
+    - oauth.authorize
+    - oauth.callback
+    - oauth.refresh
+    - oauth.revoke
+  permissions:
+    - oauth:manage
+    - users:read
+  capabilities:
+    - oauth2-provider
+  hooks:
+    - event: oauth.callback
+      timeout: 10000
+      retries: 2
+      description: Handle OAuth callback from Microsoft
+    - event: oauth.refresh
+      timeout: 10000
+      retries: 3
+      description: Refresh expired access tokens
+    - event: oauth.revoke
+      timeout: 5000
+      retries: 1
+      description: Revoke OAuth tokens
+  provides:
+    oauth_provider:
+      provider_id: microsoft
+      display_name: Microsoft
+      icon: bi-microsoft
+      default_tenant: common
+      endpoints:
+        authorize: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
+        token: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
+        revoke: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout
+        userinfo: https://graph.microsoft.com/v1.0/me
+      grant_types:
+        - authorization_code
+        - client_credentials
+        - refresh_token
+      default_scopes:
+        - openid
+        - email
+        - profile
+        - offline_access
+      available_scopes:
+        - id: openid
+          description: Sign you in
+          default: true
+        - id: email
+          description: View your email address
+          default: true
+        - id: profile
+          description: View your basic profile info
+          default: true
+        - id: offline_access
+          description: Maintain access to data you have given it access to
+          default: true
+        - id: Calendars.Read
+          description: Read your calendars
+          consumer: microsoft-calendar
+        - id: Calendars.ReadWrite
+          description: Read and write your calendars
+          consumer: microsoft-calendar
+        - id: Chat.ReadWrite
+          description: Read and write Teams chat messages
+          consumer: microsoft-teams
+        - id: ChannelMessage.Send
+          description: Send channel messages
+          consumer: microsoft-teams
+        - id: Team.ReadBasic.All
+          description: Read team information
+          consumer: microsoft-teams
+        - id: Files.Read.All
+          description: Read all files user can access
+          consumer: microsoft-onedrive
+        - id: User.Read
+          description: Sign in and read user profile
+          default: true
+  contributes:
+    commands:
+      - command: microsoft.connect
+        title: Connect Microsoft Account
+        description: Connect your Microsoft account for calendar and Teams integrations
+        category: Connections
+        icon: bi-microsoft
+        keywords: ["microsoft", "connect", "oauth", "login", "azure"]
+        handler:
+          type: extension_event
+          event: microsoft.connect
+      - command: microsoft.disconnect
+        title: Disconnect Microsoft Account
+        description: Remove your Microsoft account connection
+        category: Connections
+        icon: bi-x-circle
+        keywords: ["microsoft", "disconnect", "logout"]
+        handler:
+          type: extension_event
+          event: microsoft.disconnect
+  configuration:
+    CLIENT_ID:
+      type: string
+      secret: true
+      required: true
+      scope: extension
+      label: Azure AD Application (Client) ID
+      description: Application ID from Azure Portal > App registrations
+    CLIENT_SECRET:
+      type: string
+      secret: true
+      required: true
+      scope: extension
+      label: Azure AD Client Secret
+      description: Client secret from Azure Portal
+    TENANT_ID:
+      type: string
+      secret: false
+      required: false
+      scope: extension
+      label: Azure AD Tenant ID
+      description: Leave blank for multi-tenant (common), or specify tenant ID for single-tenant
+      default: "common"
+  rate_limiting:
+    requests_per_minute: 100
+    burst: 20
+  setup:
+    - secrets:
+        title: Microsoft Identity Platform Credentials
+        description: Configure Azure AD application credentials from Azure Portal
+        required: true
+        help_url: https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app
+        collect:
+          - CLIENT_ID
+          - CLIENT_SECRET
+    - configure:
+        title: Tenant Configuration
+        description: Configure tenant settings (optional)
+        collect:
+          - TENANT_ID
+  assets:
+    icon: ./public/icon.svg
+  hosting: internal
