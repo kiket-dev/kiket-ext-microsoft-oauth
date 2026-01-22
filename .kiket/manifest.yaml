@@ -3,6 +3,7 @@ extension:
   id: dev.kiket.ext.microsoft-oauth
   name: Microsoft OAuth
   version: 1.0.0
+  api_version: v1
   description: Shared OAuth 2.0 provider for Microsoft services. Enables single sign-on for Outlook Calendar, Microsoft Teams, OneDrive, and other Microsoft 365 integrations.
   author: Kiket Team
   homepage: https://github.com/kiket-dev/kiket-ext-microsoft-oauth
